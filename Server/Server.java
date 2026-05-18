@@ -29,18 +29,12 @@ public class Server extends JFrame {
 
       stopButton.setEnabled(false);
 
-      startButton.addActionListener(new ActionListener() {
-         @Override
-         public void actionPerformed(ActionEvent e) {
-            startServer();
-         }
+      startButton.addActionListener(e -> {
+         startServer();
       });
 
-      stopButton.addActionListener(new ActionListener() {
-         @Override
-         public void actionPerformed(ActionEvent e) {
-            stopServer();
-         }
+      stopButton.addActionListener(e -> {
+         stopServer();
       });
 
       JPanel panel = new JPanel();
@@ -129,18 +123,13 @@ public class Server extends JFrame {
       try {
          System.out.println("Client connected: " + clientSocket.getInetAddress());
 
-         InputStream in = clientSocket.getInputStream();
+         BufferedReader in = new BufferedReader(
+               new InputStreamReader(clientSocket.getInputStream()));
 
-         byte[] buffer = new byte[1];
+         String message;
 
-         // This loop keeps checking if client is still connected
-         while (running && !clientSocket.isClosed()) {
-            int read = in.read(buffer);
-
-            if (read == -1) {
-               // CLIENT DISCONNECTED
-               break;
-            }
+         while ((message = in.readLine()) != null) {
+            System.out.println("CLIENT: " + message);
          }
 
       } catch (IOException ex) {

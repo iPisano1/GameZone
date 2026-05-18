@@ -1,12 +1,13 @@
-import java.util.*;
-import javax.swing.*;
+import Client.Client;
+import UI.CustomerUI;
 
-import UI.*;
+public class MarketSystem {
 
-public class MarketSystem{   
-   
-   public MarketSystem(){
-      new CustomerUI();
-   } 
-   
+   private Client client;
+
+   public MarketSystem(Client client) {
+      this.client = client;
+
+      new CustomerUI(client); // pass to UI
+   }
 }

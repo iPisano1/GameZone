@@ -1,15 +1,17 @@
-import java.util.*;
+import javax.swing.JOptionPane;
+
 import Client.Client;
 
-public class Main{
-   
-   public static void main(String[] args){
-      
+public class Main {
+
+   public static void main(String[] args) {
+
       Client client = new Client();
-      client.establishConnection();
-      
-      new MarketSystem();
-      
+
+      if (client.establishConnection()) {
+         new MarketSystem(client);
+      } else {
+         JOptionPane.showMessageDialog(null, "Failed to connect to server.", "Connection Error", JOptionPane.ERROR_MESSAGE);
+      }
    }
-   
 }
