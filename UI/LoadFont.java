@@ -13,6 +13,10 @@ public class LoadFont {
         return loadFont("src/fonts/Poppins-Bold.ttf", size);
     }
 
+    public static Font loadPoppinsSemi(float size) {
+        return loadFont("src/fonts/Poppins-SemiBold.ttf", size);
+    }
+
     private static Font loadFont(String path, float size) {
         try {
             Font font = Font.createFont(

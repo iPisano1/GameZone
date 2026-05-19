@@ -8,10 +8,10 @@ public class Main {
 
       Client client = new Client();
 
-      if (client.establishConnection()) {
+      // if (client.establishConnection()) {
          new MarketSystem(client);
-      } else {
-         JOptionPane.showMessageDialog(null, "Failed to connect to server.", "Connection Error", JOptionPane.ERROR_MESSAGE);
-      }
+      // } else {
+      //    JOptionPane.showMessageDialog(null, "Failed to connect to server.", "Connection Error", JOptionPane.ERROR_MESSAGE);
+      // }
    }
 }

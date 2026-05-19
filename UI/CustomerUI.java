@@ -71,6 +71,7 @@ public class CustomerUI extends JFrame {
 
       Font poppins = LoadFont.loadPoppins(12f);
       Font poppinsBold = LoadFont.loadPoppinsBold(14f);
+      Font poppinsSemi = LoadFont.loadPoppinsSemi(12f);
       products = Products.loadProducts();
 
       welcomeLabel = new JLabel("Welcome, Customer!");
@@ -145,6 +146,20 @@ public class CustomerUI extends JFrame {
       gbc.gridwidth = 3;
       formPanel.add(addressField, gbc);
 
+      // Message Panel (for validation errors)
+      // JPanel messagePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+      // JLabel messageLabel = new JLabel();
+      // messageLabel.setForeground(Color.RED);
+      // messageLabel.setFont(poppinsSemi);
+      // messageLabel.setVisible(false);
+
+      // messagePanel.add(messageLabel);
+
+      // gbc.gridy = 4;
+      // gbc.gridx = 0;
+      // gbc.gridwidth = 4;
+      // formPanel.add(messagePanel, gbc);
+
       LeftPanel.add(formPanel, BorderLayout.NORTH);
 
       JPanel tablePanel = new JPanel(new BorderLayout());
@@ -190,29 +205,62 @@ public class CustomerUI extends JFrame {
       // Bottom Buttons
       JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
 
+      JButton removeButton = new JButton("Remove Selected");
+      removeButton.setFocusPainted(false);
+      removeButton.setBackground(Color.decode("#D83A3A"));
+      removeButton.setForeground(Color.WHITE);
       JButton clearFormButton = new JButton("Clear Form");
+      clearFormButton.setFocusPainted(false);
+      clearFormButton.setBackground(Color.decode("#D83A3A"));
+      clearFormButton.setForeground(Color.WHITE);
       JButton clearTableButton = new JButton("Clear Order");
+      clearTableButton.setFocusPainted(false);
+      clearTableButton.setBackground(Color.decode("#D83A3A"));
+      clearTableButton.setForeground(Color.WHITE);
+      removeButton.setForeground(Color.WHITE);
       JButton buyButton = new JButton("Buy");
+      buyButton.setFocusPainted(false);
+      buyButton.setBackground(Color.decode("#2e7d32"));
+      buyButton.setForeground(Color.WHITE);
 
+      removeButton.setFont(poppinsBold);
       clearFormButton.setFont(poppinsBold);
       clearTableButton.setFont(poppinsBold);
       buyButton.setFont(poppinsBold);
 
+      removeButton.addActionListener(e -> {
+         int selectedRow = itemTable.getSelectedRow();
+         if (selectedRow != -1) {
+            tableModel.removeRow(selectedRow);
+            calculateTotal();
+         } else {
+            JOptionPane.showMessageDialog(this, "Please select an item to remove!", "Error",
+                  JOptionPane.ERROR_MESSAGE);
+         }
+      });
+
       clearFormButton.addActionListener(e -> {
-         clearForm();
+         int response = JOptionPane.showConfirmDialog(this, "Are you sure you want to clear the form?", "Confirm",
+               JOptionPane.YES_NO_OPTION);
+         if (response == JOptionPane.YES_OPTION) {
+            clearForm();
+         } else {
+            return;
+         }
       });
 
       clearTableButton.addActionListener(e -> {
-         tableModel.setRowCount(0);
-         calculateTotal();
+         int response = JOptionPane.showConfirmDialog(this, "Are you sure you want to clear the order?", "Confirm",
+               JOptionPane.YES_NO_OPTION);
+         if (response == JOptionPane.YES_OPTION) {
+            tableModel.setRowCount(0);
+            calculateTotal();
+         } else {
+            return;
+         }
       });
 
       buyButton.addActionListener(e -> {
-
-         if (tableModel.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Your cart is empty!", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-         }
 
          String firstName = firstNameField.getText().trim();
          String lastName = lastNameField.getText().trim();
@@ -224,6 +272,33 @@ public class CustomerUI extends JFrame {
                || email.isEmpty() || address.isEmpty()) {
 
             JOptionPane.showMessageDialog(this, "Please fill out all fields!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         if (!firstName.matches("[a-zA-Z]+") || !lastName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "Names can only contain letters!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         if (phone.length() != 11) {
+            JOptionPane.showMessageDialog(this, "Phone number must be 11 digits!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         boolean isDigit = phone.chars().allMatch(Character::isDigit);
+         if (!isDigit) {
+            JOptionPane.showMessageDialog(this, "Phone number can only contain digits!", "Error",
+                  JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            JOptionPane.showMessageDialog(this, "Invalid email format!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         if (tableModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Your cart is empty!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
          }
 
@@ -246,7 +321,7 @@ public class CustomerUI extends JFrame {
                            tableModel.getValueAt(i, 2) + " | " +
                            tableModel.getValueAt(i, 3) + "\n");
             }
-            
+
             order.append("TOTAL: ").append(totalLabel.getText().replace("Total: ", "")).append("\n");
 
             out.println(order.toString());
@@ -266,6 +341,7 @@ public class CustomerUI extends JFrame {
          }
       });
 
+      actionPanel.add(removeButton);
       actionPanel.add(clearFormButton);
       actionPanel.add(clearTableButton);
       actionPanel.add(buyButton);
@@ -297,7 +373,7 @@ public class CustomerUI extends JFrame {
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
 
             JLabel nameLabel = new JLabel(product.getName());
-            nameLabel.setFont(poppinsBold);
+            nameLabel.setFont(poppinsSemi);
 
             JLabel priceLabel = new JLabel("<html>&#8369;" + product.getPrice() + "</html>");
             priceLabel.setFont(poppins);
@@ -308,10 +384,14 @@ public class CustomerUI extends JFrame {
 
             JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-            JSpinner qtySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
+            JSpinner qtySpinner = new JSpinner(new SpinnerNumberModel(1, 1, product.getStocks(), 1));
             qtySpinner.setPreferredSize(new Dimension(60, 30));
 
             JButton addButton = new JButton("Add to Cart");
+            addButton.setFont(poppinsSemi);
+            addButton.setFocusPainted(false);
+            addButton.setBackground(Color.decode("#2e7d32"));
+            addButton.setForeground(Color.WHITE);
 
             addButton.addActionListener(e -> {
 
