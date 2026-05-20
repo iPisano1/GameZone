@@ -8,6 +8,6 @@ public class MarketSystem {
    public MarketSystem(Client client) {
       this.client = client;
 
-      new CustomerUI(client); // pass to UI
+      new CustomerUI(client);
    }
 }

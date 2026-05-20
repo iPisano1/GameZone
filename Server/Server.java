@@ -14,7 +14,7 @@ public class Server extends JFrame {
    private ServerSocket serverSocket;
    private ExecutorService executor;
    private volatile boolean running;
-   private int connectedClients;
+   private String connectedClientsStatus = "Not Connected";
 
    public Server() {
       super("Server");
@@ -23,7 +23,7 @@ public class Server extends JFrame {
 
    private void initComponents() {
       statusLabel = new JLabel("Server Status: Stopped");
-      clientCountLabel = new JLabel("Clients Connected: 0");
+      clientCountLabel = new JLabel("Client Status: Not Connected");
       startButton = new JButton("Start Server");
       stopButton = new JButton("Stop Server");
 
@@ -74,9 +74,9 @@ public class Server extends JFrame {
          serverSocket = new ServerSocket(5000);
          executor = Executors.newCachedThreadPool();
          running = true;
-         connectedClients = 0;
          updateStatus("Server Status: Running");
-         updateClientCount();
+         connectedClientsStatus = "Waiting for clients...";
+         updateClientStatus();
          startButton.setEnabled(false);
          stopButton.setEnabled(true);
 
@@ -84,8 +84,8 @@ public class Server extends JFrame {
             while (running) {
                try {
                   Socket clientSocket = serverSocket.accept();
-                  connectedClients++;
-                  updateClientCount();
+                  connectedClientsStatus = "Connected";
+                  updateClientStatus();
                   executor.execute(() -> handleClient(clientSocket));
                } catch (IOException ex) {
                   if (running) {
@@ -106,6 +106,8 @@ public class Server extends JFrame {
       startButton.setEnabled(true);
       stopButton.setEnabled(false);
       updateStatus("Server Status: Stopped");
+      connectedClientsStatus = "Server Shutdown";
+      updateClientStatus();
 
       if (executor != null) {
          executor.shutdownNow();
@@ -129,7 +131,7 @@ public class Server extends JFrame {
          String message;
 
          while ((message = in.readLine()) != null) {
-            System.out.println("CLIENT: " + message);
+            System.out.println("Client: " + message);
          }
 
       } catch (IOException ex) {
@@ -140,8 +142,8 @@ public class Server extends JFrame {
          } catch (IOException ignored) {
          }
 
-         connectedClients--;
-         updateClientCount();
+         connectedClientsStatus = "Disconnected";
+         updateClientStatus();
 
          System.out.println("Client disconnected");
       }
@@ -151,8 +153,8 @@ public class Server extends JFrame {
       SwingUtilities.invokeLater(() -> statusLabel.setText(status));
    }
 
-   private void updateClientCount() {
-      SwingUtilities.invokeLater(() -> clientCountLabel.setText("Clients Connected: " + connectedClients));
+   private void updateClientStatus() {
+      SwingUtilities.invokeLater(() -> clientCountLabel.setText("Client Status: " + connectedClientsStatus));
    }
 
    public static void main(String[] args) {

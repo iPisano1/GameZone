@@ -14,6 +14,9 @@ import Client.Client;
 
 public class CustomerUI extends JFrame {
 
+   JMenuItem connectItem;
+   JMenuItem disconnectItem;
+
    JLabel welcomeLabel;
    JLabel firstNameLabel;
    JLabel lastNameLabel;
@@ -38,8 +41,6 @@ public class CustomerUI extends JFrame {
    JScrollPane scrollPane;
 
    private Client client;
-   private DataInputStream in = null;
-   private DataOutputStream out = null;
 
    private Products[] products;
 
@@ -57,7 +58,7 @@ public class CustomerUI extends JFrame {
       addressField.setText("");
    }
 
-   public void calculateTotal() {
+   public void setTotal() {
       double total = 0;
 
       for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -65,6 +66,26 @@ public class CustomerUI extends JFrame {
       }
 
       totalLabel.setText("<html>Total: &#8369;" + String.format("%.2f", total) + "</html>");
+   }
+
+   public double getTotal() {
+      double total = 0;
+
+      for (int i = 0; i < tableModel.getRowCount(); i++) {
+         total += (Double) tableModel.getValueAt(i, 3);
+      }
+
+      return total;
+   }
+
+   public void checkConnectionStatus() {
+      if (client.getSocket() != null && client.getSocket().isConnected()) {
+         connectItem.setEnabled(false);
+         disconnectItem.setEnabled(true);
+      } else {
+         connectItem.setEnabled(true);
+         disconnectItem.setEnabled(false);
+      }
    }
 
    private void initComponents() {
@@ -94,6 +115,112 @@ public class CustomerUI extends JFrame {
       phoneField = new JTextField(10);
       emailField = new JTextField(10);
       addressField = new JTextField(10);
+
+      JMenuBar menuBar = new JMenuBar();
+
+      JMenu fileMenu = new JMenu("File");
+      JMenuItem exitItem = new JMenuItem("Exit");
+
+      JMenu connectMenu = new JMenu("Connection");
+      connectItem = new JMenuItem("Connect to Server");
+      disconnectItem = new JMenuItem("Disconnect from Server");
+
+      JMenu debugMenu = new JMenu("Debug");
+      JMenuItem fillClientFormItem = new JMenuItem("Fill Form");
+      JMenu setStocksItem = new JMenu("Set All Stocks");
+      JMenuItem setStocksto0Item = new JMenuItem("0");
+      JMenuItem setStocksTo5Item = new JMenuItem("5");
+      JMenuItem setStocksTo10Item = new JMenuItem("10");
+      JMenuItem clearAllItem = new JMenuItem("Clear All");
+
+      fileMenu.add(exitItem);
+      menuBar.add(fileMenu);
+
+      connectMenu.add(connectItem);
+      connectMenu.add(disconnectItem);
+      menuBar.add(connectMenu);
+
+      debugMenu.add(fillClientFormItem);
+      setStocksItem.add(setStocksto0Item);
+      setStocksItem.add(setStocksTo5Item);
+      setStocksItem.add(setStocksTo10Item);
+      debugMenu.add(setStocksItem);
+      debugMenu.add(clearAllItem);
+      menuBar.add(debugMenu);
+
+      setJMenuBar(menuBar);
+
+      checkConnectionStatus();
+
+      // Debug Actions
+      fillClientFormItem.addActionListener(e -> {
+         firstNameField.setText("John");
+         lastNameField.setText("Doe");
+         phoneField.setText("09123456789");
+         emailField.setText("test@gmail.com");
+         addressField.setText("Purok 2, Barangay 3, Opaon, Philippines");
+      });
+
+      setStocksto0Item.addActionListener(e -> {
+         for (Products product : products) {
+            product.setStocks(0);
+         }
+         JOptionPane.showMessageDialog(this, "Stocks updated!", "Stock Update", JOptionPane.INFORMATION_MESSAGE);
+      });
+
+      setStocksTo5Item.addActionListener(e -> {
+         for (Products product : products) {
+            product.setStocks(5);
+         }
+         JOptionPane.showMessageDialog(this, "Stocks updated!", "Stock Update", JOptionPane.INFORMATION_MESSAGE);
+      });
+
+      setStocksTo10Item.addActionListener(e -> {
+         for (Products product : products) {
+            product.setStocks(10);
+         }
+         JOptionPane.showMessageDialog(this, "Stocks updated!", "Stock Update", JOptionPane.INFORMATION_MESSAGE);
+      });
+
+      clearAllItem.addActionListener(e -> {
+         clearForm();
+         tableModel.setRowCount(0);
+         setTotal();
+      });
+
+      // Connection Actions
+      connectItem.addActionListener(e -> {
+         if (client.establishConnection()) {
+            JOptionPane.showMessageDialog(this, "Connected to server!", "Connection Status",
+                  JOptionPane.INFORMATION_MESSAGE);
+            checkConnectionStatus();
+         } else {
+            JOptionPane.showMessageDialog(this, "Failed to connect to server.", "Connection Error",
+                  JOptionPane.ERROR_MESSAGE);
+         }
+      });
+
+      disconnectItem.addActionListener(e -> {
+         try {
+            client.closeConnection();
+            JOptionPane.showMessageDialog(this, "Disconnected from server!", "Connection Status",
+                  JOptionPane.INFORMATION_MESSAGE);
+            checkConnectionStatus();
+         } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Failed to disconnect from server.", "Connection Error",
+                  JOptionPane.ERROR_MESSAGE);
+         }
+      });
+
+      // File Actions
+      exitItem.addActionListener(e -> {
+         try {
+            client.closeConnection();
+         } catch (IOException ex) {
+            // Ignore
+         }
+         System.exit(0);
+      });
 
       // Left Panel
       JPanel LeftPanel = new JPanel(new BorderLayout(10, 10));
@@ -207,7 +334,7 @@ public class CustomerUI extends JFrame {
 
       JButton removeButton = new JButton("Remove Selected");
       removeButton.setFocusPainted(false);
-      removeButton.setBackground(Color.decode("#D83A3A"));
+      removeButton.setBackground(Color.decode("#D9C914"));
       removeButton.setForeground(Color.WHITE);
       JButton clearFormButton = new JButton("Clear Form");
       clearFormButton.setFocusPainted(false);
@@ -232,7 +359,7 @@ public class CustomerUI extends JFrame {
          int selectedRow = itemTable.getSelectedRow();
          if (selectedRow != -1) {
             tableModel.removeRow(selectedRow);
-            calculateTotal();
+            setTotal();
          } else {
             JOptionPane.showMessageDialog(this, "Please select an item to remove!", "Error",
                   JOptionPane.ERROR_MESSAGE);
@@ -254,7 +381,7 @@ public class CustomerUI extends JFrame {
                JOptionPane.YES_NO_OPTION);
          if (response == JOptionPane.YES_OPTION) {
             tableModel.setRowCount(0);
-            calculateTotal();
+            setTotal();
          } else {
             return;
          }
@@ -302,12 +429,39 @@ public class CustomerUI extends JFrame {
             return;
          }
 
+         if (client.getSocket() == null) {
+            JOptionPane.showMessageDialog(this, "Failed to connect to server!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+         }
+
+         for (int i = 0; i < tableModel.getRowCount(); i++) {
+
+            String productName = (String) tableModel.getValueAt(i, 0);
+            int qtyBought = (Integer) tableModel.getValueAt(i, 1);
+
+            for (Products product : products) {
+
+               if (product.getName().equals(productName)) {
+
+                  if (product.getStocks() >= qtyBought) {
+                     product.decreaseStocks(qtyBought);
+                  } else {
+                     JOptionPane.showMessageDialog(this,
+                           "Not enough stock for " + productName,
+                           "Stock Error",
+                           JOptionPane.ERROR_MESSAGE);
+                     return;
+                  }
+               }
+            }
+         }
+
          try {
             PrintWriter out = new PrintWriter(client.getSocket().getOutputStream(), true);
 
             StringBuilder order = new StringBuilder();
 
-            order.append("ORDER\n");
+            order.append("===========================================\n");
             order.append("NAME: ").append(firstName).append(" ").append(lastName).append("\n");
             order.append("PHONE: ").append(phone).append("\n");
             order.append("EMAIL: ").append(email).append("\n");
@@ -322,7 +476,8 @@ public class CustomerUI extends JFrame {
                            tableModel.getValueAt(i, 3) + "\n");
             }
 
-            order.append("TOTAL: ").append(totalLabel.getText().replace("Total: ", "")).append("\n");
+            order.append("TOTAL: ").append(getTotal()).append("\n");
+            order.append("===========================================");
 
             out.println(order.toString());
 
@@ -333,7 +488,7 @@ public class CustomerUI extends JFrame {
 
             clearForm();
             tableModel.setRowCount(0);
-            calculateTotal();
+            setTotal();
 
          } catch (Exception ex) {
             ex.printStackTrace();
@@ -384,7 +539,10 @@ public class CustomerUI extends JFrame {
 
             JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-            JSpinner qtySpinner = new JSpinner(new SpinnerNumberModel(1, 1, product.getStocks(), 1));
+            JLabel qtyLabel = new JLabel("Qty:");
+            qtyLabel.setFont(poppins);
+
+            JSpinner qtySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
             qtySpinner.setPreferredSize(new Dimension(60, 30));
 
             JButton addButton = new JButton("Add to Cart");
@@ -412,6 +570,15 @@ public class CustomerUI extends JFrame {
                      int newQty = existingQty + qty;
                      double newSubtotal = price * newQty;
 
+                     if (newQty > product.getStocks()) {
+                        JOptionPane.showMessageDialog(this,
+                              "Only " + product.getStocks() + " stocks available!",
+                              "Stock Error",
+                              JOptionPane.ERROR_MESSAGE);
+                        qtySpinner.setValue(1);
+                        return;
+                     }
+
                      tableModel.setValueAt(newQty, i, 1);
                      tableModel.setValueAt(newSubtotal, i, 3);
 
@@ -422,6 +589,15 @@ public class CustomerUI extends JFrame {
 
                if (!found) {
 
+                  if (qty > product.getStocks()) {
+                     JOptionPane.showMessageDialog(this,
+                           "Only " + product.getStocks() + " stocks available!",
+                           "Stock Error",
+                           JOptionPane.ERROR_MESSAGE);
+                     qtySpinner.setValue(1);
+                     return;
+                  }
+
                   tableModel.addRow(new Object[] {
                         product.getName(),
                         qty,
@@ -430,11 +606,11 @@ public class CustomerUI extends JFrame {
                   });
                }
 
-               calculateTotal();
+               setTotal();
                qtySpinner.setValue(1);
             });
 
-            controlPanel.add(new JLabel("Qty:"));
+            controlPanel.add(qtyLabel);
             controlPanel.add(qtySpinner);
             controlPanel.add(addButton);
 

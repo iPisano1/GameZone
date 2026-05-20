@@ -1,5 +1,6 @@
 package Client;
 
+import java.io.IOException;
 import java.net.*;
 
 public class Client {
@@ -9,17 +10,20 @@ public class Client {
    public boolean establishConnection() {
       try {
          socket = new Socket("127.0.0.1", 5000);
-
-         System.out.println("Connected to server");
          return true;
 
       } catch (ConnectException ce) {
-         System.out.println("Connection Error: Failed to Connect to Server.");
          return false;
-
       } catch (Exception e) {
          System.out.println(e);
          return false;
+      }
+   }
+
+   public void closeConnection() throws IOException {
+      if (socket != null && !socket.isClosed()) {
+         socket.close();
+         socket = null;
       }
    }
 

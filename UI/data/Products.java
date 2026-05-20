@@ -33,4 +33,12 @@ public class Products {
     public int getStocks() {
         return stocks;
     }
+
+    public void setStocks(int stocks) {
+        this.stocks = stocks;
+    }
+
+    public void decreaseStocks(int qty) {
+        this.stocks -= qty;
+    }
 }
